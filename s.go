@@ -8,7 +8,7 @@ import (
 	"io"
 	"encoding/binary"
 	"strconv"
-	"l"
+	buff "github.com/jspdba/simpleProxy/leakybuff"
 )
 
 var (
@@ -19,19 +19,20 @@ var (
 	errReqExtraData  = errors.New("socks request get extra data")
 	errCmd           = errors.New("socks command not supported")
 
-	readTimeout      = 10*time.Second
+	readTimeout      = 5*time.Second
+	leakyBuf         = buff.Instance()
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	l, err := net.Listen("tcp", ":8081")
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
 	}
 	for {
 		client, err := l.Accept()
 		if err != nil {
-			log.Panic(err)
+			log.Println(err)
 		}
 		go HandleClientRequest(client)
 	}
@@ -55,13 +56,11 @@ func HandShake(conn net.Conn) (err error) {
 		return
 	}
 	if buf[idVer] != 0x05 {
-		log.Println(buf[idVer])
 		return errVer
 	}
 	nmethod := int(buf[idNmethod])
 	msgLen := nmethod + 2
 
-	log.Println(n,nmethod,msgLen)
 	if n == msgLen { // handshake done, common case
 		// do nothing, jump directly to send confirmation
 	} else if n < msgLen { // has more methods to read, rare case
@@ -88,12 +87,12 @@ func HandleClientRequest(client net.Conn) {
 	defer client.Close()
 	HandShake(client)
 
-	rawaddr, addr, err := getRequest(client)
+	_, addr, err := getRequest(client)
 	if err != nil {
 		log.Println("error getting request:", err)
 		return
 	}
-	log.Println(string(rawaddr),addr)
+	log.Println(addr)
 
 	// Sending connection established message immediately to client.
 	// This some round trip time for creating socks connection with the client.
@@ -124,6 +123,12 @@ func HandleClientRequest(client net.Conn) {
 
 	go PipeThenClose(client, remote)
 	PipeThenClose(remote, client)
+	/*go io.Copy(remote, client)
+	io.Copy(client, remote)*/
+
+	/*go PipeThenClose(remote, client)
+	PipeThenClose(client, remote)*/
+
 	closed = true
 	log.Println("closed connection to", addr)
 
@@ -154,7 +159,6 @@ func getRequest(conn net.Conn) (rawaddr []byte, host string, err error) {
 	if n, err = io.ReadAtLeast(conn, buf, idDmLen+1); err != nil {
 		return
 	}
-	log.Println("readn=",n)
 	// check version and cmd
 	if buf[idVer] != 0x05 {
 		err = errVer
