@@ -1,5 +1,5 @@
 // Provides leaky buffer, based on the example in Effective Go.
-package leakyBuf
+package leakybuff
 
 type LeakyBuf struct {
 	bufSize  int // size of each buffer
