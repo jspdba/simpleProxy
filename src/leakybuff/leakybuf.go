@@ -9,9 +9,11 @@ type LeakyBuf struct {
 const leakyBufSize = 4108 // data.len(2) + hmacsha1(10) + data(4096)
 const maxNBuf = 2048
 
-var leakyBuf = NewLeakyBuf(maxNBuf, leakyBufSize)
-
-func(lb *LeakyBuf) Instance() *LeakyBuf{
+var leakyBuf *LeakyBuf
+func Instance() *LeakyBuf{
+	if leakyBuf==nil{
+		leakyBuf = NewLeakyBuf(maxNBuf, leakyBufSize)
+	}
 	return leakyBuf
 }
 
@@ -46,4 +48,7 @@ func (lb *LeakyBuf) Put(b []byte) {
 	default:
 	}
 	return
+}
+func init() {
+	leakyBuf = NewLeakyBuf(maxNBuf, leakyBufSize)
 }
