@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"strconv"
 	buff "github.com/jspdba/simpleProxy/leakybuff"
+	"flag"
 )
 
 var (
@@ -25,7 +26,10 @@ var (
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	l, err := net.Listen("tcp", ":8081")
+	var port string
+	flag.StringVar(&port,"port","1081","default port is 1081")
+	flag.Parse()
+	l, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Println(err)
 	}
