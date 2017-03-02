@@ -11,7 +11,7 @@ const maxNBuf = 2048
 
 var leakyBuf = NewLeakyBuf(maxNBuf, leakyBufSize)
 
-func(lb *LeakyBuf) Instance(){
+func(lb *LeakyBuf) Instance() *LeakyBuf{
 	return leakyBuf
 }
 
